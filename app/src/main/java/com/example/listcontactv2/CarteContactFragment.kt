@@ -25,15 +25,16 @@ class CarteContactFragment : Fragment(R.layout.fragment_carte_contact) {
         val ctx = requireContext().applicationContext
         val prefs = ctx.getSharedPreferences("${ctx.packageName}_preferences", Context.MODE_PRIVATE)
         Configuration.getInstance().load(ctx, prefs)
-        Configuration.getInstance().userAgentValue = "MyAndroidContactApp/1.0 (${ctx.packageName})"
+        Configuration.getInstance().userAgentValue = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         mapView = view.findViewById(R.id.mapView)
-        mapView.setTileSource(TileSourceFactory.OpenTopo)
+        mapView.setTileSource(TileSourceFactory.MAPNIK)
         mapView.setMultiTouchControls(true)
+        mapView.setBuiltInZoomControls(true)
 
         val contact = viewModel.selectedContact.value
         val lat = contact?.latitude
@@ -41,7 +42,8 @@ class CarteContactFragment : Fragment(R.layout.fragment_carte_contact) {
 
         if (contact != null && lat != null && lon != null) {
             val startPoint = GeoPoint(lat, lon)
-            mapView.controller.setZoom(14.0)
+            // Zoom à 17.0 pour afficher les rues, avenues et bâtiments de manière nette
+            mapView.controller.setZoom(17.0)
             mapView.controller.setCenter(startPoint)
 
             val marker = Marker(mapView)
