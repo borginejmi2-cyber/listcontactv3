@@ -1,3 +1,5 @@
 <resources>
-    <string name="app_name">list contact v2</string>
+    <string name="app_name">List Contact V3</string>
+    <!-- Remplacer "YOUR_API_KEY_HERE" par une clé API Google Maps valide si besoin -->
+    <string name="google_maps_key" translatable="false">YOUR_API_KEY_HERE</string>
 </resources>

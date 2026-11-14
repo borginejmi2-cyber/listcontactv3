@@ -1,65 +1,59 @@
 package com.example.listcontactv2
 
-import android.content.Context
+import android.annotation.SuppressLint
 import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.BaseAdapter
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.recyclerview.widget.RecyclerView
 
 class ContactAdapter(
-    context: Context,
-    private val contacts: List<Contact>,
-) : BaseAdapter() {
+    private var contacts: List<Contact> = emptyList(),
+    private val onItemClick: (Contact) -> Unit,
+) : RecyclerView.Adapter<ContactAdapter.ViewHolder>() {
 
-    private val inflater = LayoutInflater.from(context)
-
-    override fun getCount(): Int = contacts.size
-
-    override fun getItem(position: Int): Any = contacts[position]
-
-    override fun getItemId(position: Int): Long = position.toLong()
-
-    override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
-        val view: View
-        val holder: ViewHolder
-
-        if (convertView == null) {
-            view = inflater.inflate(R.layout.item_contact, parent, false)
-            holder = ViewHolder(
-                view.findViewById(R.id.imgContact),
-                view.findViewById(R.id.tvNomPrenom),
-                view.findViewById(R.id.tvTelephone)
-            )
-            view.tag = holder
-        } else {
-            view = convertView
-            holder = view.tag as ViewHolder
-        }
-
-        val contact = contacts[position]
-        holder.tvNomPrenom.text = "${contact.nom} ${contact.prenom}"
-        holder.tvTelephone.text = contact.telephone
-
-        // Affichage de la photo (ou image par défaut si aucune photo n'est définie)
-        if (!contact.photoUri.isNullOrEmpty()) {
-            try {
-                holder.imgContact.setImageURI(Uri.parse(contact.photoUri))
-            } catch (_: Exception) {
-                holder.imgContact.setImageResource(R.mipmap.ic_launcher_round)
-            }
-        } else {
-            holder.imgContact.setImageResource(R.mipmap.ic_launcher_round)
-        }
-
-        return view
+    @SuppressLint("NotifyDataSetChanged")
+    fun updateContacts(newContacts: List<Contact>) {
+        contacts = newContacts
+        notifyDataSetChanged()
     }
 
-    private class ViewHolder(
-        val imgContact: ImageView,
-        val tvNomPrenom: TextView,
-        val tvTelephone: TextView
-    )
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_contact, parent, false)
+        return ViewHolder(view)
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.bind(contacts[position])
+    }
+
+    override fun getItemCount(): Int = contacts.size
+
+    inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val imgContact: ImageView = itemView.findViewById(R.id.imgContact)
+        private val tvNomPrenom: TextView = itemView.findViewById(R.id.tvNomPrenom)
+        private val tvTelephone: TextView = itemView.findViewById(R.id.tvTelephone)
+
+        fun bind(contact: Contact) {
+            tvNomPrenom.text = "${contact.nom} ${contact.prenom}"
+            tvTelephone.text = contact.telephone
+
+            if (!contact.photoUri.isNullOrEmpty()) {
+                try {
+                    imgContact.setImageURI(Uri.parse(contact.photoUri))
+                } catch (_: Exception) {
+                    imgContact.setImageResource(R.mipmap.ic_launcher_round)
+                }
+            } else {
+                imgContact.setImageResource(R.mipmap.ic_launcher_round)
+            }
+
+            itemView.setOnClickListener {
+                onItemClick(contact)
+            }
+        }
+    }
 }
