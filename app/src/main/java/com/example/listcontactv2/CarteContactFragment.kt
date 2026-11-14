@@ -20,13 +20,16 @@ class CarteContactFragment : Fragment(R.layout.fragment_carte_contact) {
     private val viewModel: ContactViewModel by activityViewModels()
     private lateinit var mapView: MapView
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
         val ctx = requireContext().applicationContext
         val prefs = ctx.getSharedPreferences("${ctx.packageName}_preferences", Context.MODE_PRIVATE)
         Configuration.getInstance().load(ctx, prefs)
-        Configuration.getInstance().userAgentValue = ctx.packageName
+        Configuration.getInstance().userAgentValue = "ListContactV3App/1.0 (${ctx.packageName})"
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
         mapView = view.findViewById(R.id.mapView)
         mapView.setTileSource(TileSourceFactory.MAPNIK)
