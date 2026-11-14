@@ -10,7 +10,7 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import org.osmdroid.config.Configuration
-import org.osmdroid.tileprovider.tilesource.XYTileSource
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
@@ -25,28 +25,14 @@ class CarteContactFragment : Fragment(R.layout.fragment_carte_contact) {
         val ctx = requireContext().applicationContext
         val prefs = ctx.getSharedPreferences("${ctx.packageName}_preferences", Context.MODE_PRIVATE)
         Configuration.getInstance().load(ctx, prefs)
-        Configuration.getInstance().userAgentValue = "Mozilla/5.0 (Android; Mobile; rv:120.0) Gecko/120.0 Firefox/120.0"
+        Configuration.getInstance().userAgentValue = "MyAndroidContactApp/1.0 (${ctx.packageName})"
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         mapView = view.findViewById(R.id.mapView)
-
-        val cartoDbTileSource = XYTileSource(
-            "CartoDBVoyager",
-            0,
-            19,
-            256,
-            ".png",
-            arrayOf(
-                "https://a.basemaps.cartocdn.com/rastertiles/voyager/",
-                "https://b.basemaps.cartocdn.com/rastertiles/voyager/",
-                "https://c.basemaps.cartocdn.com/rastertiles/voyager/",
-                "https://d.basemaps.cartocdn.com/rastertiles/voyager/"
-            )
-        )
-        mapView.setTileSource(cartoDbTileSource)
+        mapView.setTileSource(TileSourceFactory.OpenTopo)
         mapView.setMultiTouchControls(true)
 
         val contact = viewModel.selectedContact.value
@@ -55,7 +41,7 @@ class CarteContactFragment : Fragment(R.layout.fragment_carte_contact) {
 
         if (contact != null && lat != null && lon != null) {
             val startPoint = GeoPoint(lat, lon)
-            mapView.controller.setZoom(15.0)
+            mapView.controller.setZoom(14.0)
             mapView.controller.setCenter(startPoint)
 
             val marker = Marker(mapView)
