@@ -1,5 +1,6 @@
 package com.example.listcontactv2
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -8,29 +9,54 @@ import android.widget.Button
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MarkerOptions
+import org.osmdroid.config.Configuration
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
 
-class CarteContactFragment : Fragment(R.layout.fragment_carte_contact), OnMapReadyCallback {
+class CarteContactFragment : Fragment(R.layout.fragment_carte_contact) {
 
     private val viewModel: ContactViewModel by activityViewModels()
+    private lateinit var mapView: MapView
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val mapFragment = childFragmentManager.findFragmentById(R.id.map) as? SupportMapFragment
-        mapFragment?.getMapAsync(this)
+        val ctx = requireContext().applicationContext
+        val prefs = ctx.getSharedPreferences("${ctx.packageName}_preferences", Context.MODE_PRIVATE)
+        Configuration.getInstance().load(ctx, prefs)
+        Configuration.getInstance().userAgentValue = ctx.packageName
+
+        mapView = view.findViewById(R.id.mapView)
+        mapView.setTileSource(TileSourceFactory.MAPNIK)
+        mapView.setMultiTouchControls(true)
+
+        val contact = viewModel.selectedContact.value
+        val lat = contact?.latitude
+        val lon = contact?.longitude
+
+        if (contact != null && lat != null && lon != null) {
+            val startPoint = GeoPoint(lat, lon)
+            mapView.controller.setZoom(15.0)
+            mapView.controller.setCenter(startPoint)
+
+            val marker = Marker(mapView)
+            marker.position = startPoint
+            marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+            marker.title = "${contact.nom} ${contact.prenom}"
+            marker.snippet = "Lat: $lat, Lon: $lon"
+            mapView.overlays.add(marker)
+        } else {
+            Toast.makeText(
+                requireContext(),
+                "Coordonnées GPS non disponibles pour ce contact",
+                Toast.LENGTH_LONG
+            ).show()
+        }
 
         val btnOpenExternalMap = view.findViewById<Button>(R.id.btnOpenExternalMap)
         btnOpenExternalMap.setOnClickListener {
-            val contact = viewModel.selectedContact.value
-            val lat = contact?.latitude
-            val lon = contact?.longitude
-
             if (contact != null && lat != null && lon != null) {
                 val label = "${contact.nom} ${contact.prenom}"
                 val geoUri = Uri.parse("geo:$lat,$lon?q=$lat,$lon(${Uri.encode(label)})")
@@ -46,30 +72,17 @@ class CarteContactFragment : Fragment(R.layout.fragment_carte_contact), OnMapRea
         }
     }
 
-    override fun onMapReady(googleMap: GoogleMap) {
-        val contact = viewModel.selectedContact.value
-        val lat = contact?.latitude
-        val lon = contact?.longitude
+    override fun onResume() {
+        super.onResume()
+        if (::mapView.isInitialized) {
+            mapView.onResume()
+        }
+    }
 
-        googleMap.uiSettings.isZoomControlsEnabled = true
-        googleMap.uiSettings.isCompassEnabled = true
-        googleMap.mapType = GoogleMap.MAP_TYPE_NORMAL
-
-        if (contact != null && lat != null && lon != null) {
-            val position = LatLng(lat, lon)
-            googleMap.addMarker(
-                MarkerOptions()
-                    .position(position)
-                    .title("${contact.nom} ${contact.prenom}")
-                    .snippet("Lat: $lat, Lon: $lon")
-            )
-            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(position, 14f))
-        } else {
-            Toast.makeText(
-                requireContext(),
-                "Coordonnées GPS non disponibles pour ce contact",
-                Toast.LENGTH_LONG
-            ).show()
+    override fun onPause() {
+        super.onPause()
+        if (::mapView.isInitialized) {
+            mapView.onPause()
         }
     }
 }
