@@ -10,8 +10,9 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import org.osmdroid.config.Configuration
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.tileprovider.tilesource.OnlineTileSourceBase
 import org.osmdroid.util.GeoPoint
+import org.osmdroid.util.MapTileIndex
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 
@@ -25,16 +26,31 @@ class CarteContactFragment : Fragment(R.layout.fragment_carte_contact) {
         val ctx = requireContext().applicationContext
         val prefs = ctx.getSharedPreferences("${ctx.packageName}_preferences", Context.MODE_PRIVATE)
         Configuration.getInstance().load(ctx, prefs)
-        Configuration.getInstance().userAgentValue = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+        Configuration.getInstance().userAgentValue = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         mapView = view.findViewById(R.id.mapView)
-        mapView.setTileSource(TileSourceFactory.MAPNIK)
+
+        val esriTileSource = object : OnlineTileSourceBase(
+            "EsriWorldStreetMap",
+            0,
+            19,
+            256,
+            ".png",
+            arrayOf("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/")
+        ) {
+            override fun getTileURLString(pMapTileIndex: Long): String {
+                return baseUrl + MapTileIndex.getZoom(pMapTileIndex) + "/" +
+                        MapTileIndex.getY(pMapTileIndex) + "/" +
+                        MapTileIndex.getX(pMapTileIndex)
+            }
+        }
+
+        mapView.setTileSource(esriTileSource)
         mapView.setMultiTouchControls(true)
-        mapView.setBuiltInZoomControls(true)
 
         val contact = viewModel.selectedContact.value
         val lat = contact?.latitude
@@ -42,8 +58,7 @@ class CarteContactFragment : Fragment(R.layout.fragment_carte_contact) {
 
         if (contact != null && lat != null && lon != null) {
             val startPoint = GeoPoint(lat, lon)
-            // Zoom à 17.0 pour afficher les rues, avenues et bâtiments de manière nette
-            mapView.controller.setZoom(17.0)
+            mapView.controller.setZoom(16.0)
             mapView.controller.setCenter(startPoint)
 
             val marker = Marker(mapView)
